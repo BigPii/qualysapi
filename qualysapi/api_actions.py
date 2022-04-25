@@ -560,3 +560,62 @@ class QGActions:
 
         logging.debug("%s %s %s", res.DATETIME, code, res.TEXT)
         return code, res
+
+    def listTickets(self, ticket_numbers=None, since_ticket_number=None, until_ticket_number=None, show_vuln_details=None, ticket_assignee=None, overdue=None, invalid=None, states=None):
+        """Takes a list of intervals, checks for overlapping intervals and returns the merged intervals.
+        Intervals are expected to be in correct order e.g. [2, 13] rather than [13, 2].
+        Args:
+            ticket_numbers(str): filter for ticket numbers and/or ranges. Use a dash (69-1337) to separate the ticket range start and end. Multiple entries are comma separated (1,42,69-1337).
+            since_ticket_number(int): results will be >= number.
+            until_ticket_number(int): results will be <= number.
+            show_vuln_details(bool): When set to True, vulnerability details are included. Default: False
+            ticket_assignee(str): user login of an active user account to filter for.
+            overdue(bool): True: only overdue tickets; False: only tickets that are not overdue; Default: both.
+            invalid(bool): True: only invalid tickets; False: only valid tickets; Default: both.
+            states(str): Specify one or more state/status codes. A valid value is OPEN (for open/reopened), RESOLVED, CLOSED (for closed/fixed) or IGNORED (for closed/ignored). Multiple states are comma separated ('OPEN,CLOSED').
+        Returns:
+            list of tickets.
+        Example:
+            tickets = qga.listTickets(ticket_numbers="1,42,69-1337")
+        """
+
+        call = "ticket_list.php"
+        parameters = {}
+
+        if type(ticket_numbers) == str:
+            parameters["ticket_numbers"] = ticket_numbers
+        if type(since_ticket_number) == int:
+            parameters["since_ticket_number"] = str(since_ticket_number)
+        if type(until_ticket_number) == int:
+            parameters["until_ticket_number"] = str(until_ticket_number)
+        if type(show_vuln_details) == bool:
+            parameters["show_vuln_details"] = int(show_vuln_details)
+        if type(ticket_assignee) == str:
+            parameters["ticket_assignee"] = ticket_assignee
+        if type(overdue) == bool:
+            parameters["overdue"] = int(overdue)
+        if type(invalid) == bool:
+            parameters["invalid"] = int(invalid)
+        if type(states) == str:
+            parameters["states"] = states
+
+        ticket_list = objectify.fromstring(self.request(call, parameters).encode("utf-8"))
+        ticketArray = []
+        for ticket in ticket_list.TICKET_LIST.TICKET:
+            ticketArray.append(
+                Ticket(
+                    number = ticket.find("NUMBER"),
+                    assignee = ticket.find("ASSIGNEE"),
+                    creation_datetime = ticket.find("CREATION_DATETIME"),
+                    detection = ticket.find("DETECTION"),
+                    due_datetime = ticket.find("DUE_DATETIME"),
+                    history_list = ticket.find("HISTORY_LIST"),
+                    invalid = ticket.find("INVALID"),
+                    state = ticket.find("CURRENT_STATE"),
+                    status = ticket.find("CURRENT_STATUS"),
+                    stats = ticket.find("STATS"),
+                    vulninfo = ticket.find("VULNINFO")
+                )
+            )
+
+        return ticketArray

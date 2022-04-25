@@ -190,3 +190,40 @@ class Scan:
             self.status = objectify.fromstring(
                 conn.request(call, parameters).encode("utf-8")
             ).RESPONSE.SCAN_LIST.SCAN.STATUS.STATE
+
+class Ticket:
+    def __init__(
+        self,
+        number,
+        assignee,
+        creation_datetime,
+        detection,
+        due_datetime,
+        history_list,
+        invalid,
+        state,
+        status,
+        stats,
+        vulninfo
+    ):
+        self.number = number
+        self.assignee = assignee
+        creation_datetime = str(creation_datetime).replace("T", " ").replace("Z", "").split(" ")
+        creation_date = creation_datetime[0].split("-")
+        creation_time = creation_datetime[1].split(":")
+        self.creation_datetime = datetime.datetime(
+            int(creation_date[0]), int(creation_date[1]), int(creation_date[2]), int(creation_time[0]), int(creation_time[1]), int(creation_time[2])
+        )
+        self.detection = detection
+        due_datetime = str(due_datetime).replace("T", " ").replace("Z", "").split(" ")
+        due_date = due_datetime[0].split("-")
+        due_time = due_datetime[1].split(":")
+        self.due_datetime = datetime.datetime(
+            int(due_date[0]), int(due_date[1]), int(due_date[2]), int(due_time[0]), int(due_time[1]), int(due_time[2])
+        )
+        self.history_list = history_list
+        self.invalid = bool(invalid)
+        self.state = str(state.text)
+        self.status = str(status.text)
+        self.stats = stats
+        self.vulninfo = vulninfo
